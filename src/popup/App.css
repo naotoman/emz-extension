@@ -1,0 +1,45 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+#text-username {
+  margin-top: 0;
+  margin-bottom: 6px;
+  font-size: 18px;
+}
+
+#text-key {
+  padding: 4px;
+  width: 220px;
+  height: 32px;
+  border: none;
+  outline: none;
+  border: 1px solid #aaa;
+  font-size: 15px;
+  transition: 0.3s ease;
+}
+
+#submit-btn {
+  margin-top: 6px;
+  width: 60px;
+  height: 32px;
+  background-color: #9b6025;
+  border: none;
+  border-radius: 2px;
+  color: #fff;
+  transition: 0.3s all;
+  cursor: pointer;
+}
+
+#submit-btn:hover {
+  background-color: #794b1d;
+}
+
+#warning {
+  margin-top: 4px;
+  margin-bottom: 0;
+  font-size: 12px;
+  color: red;
+}
