@@ -1,5 +1,3 @@
-import { waitQuerySelectorAll } from "../common/utils";
-
 const getLocalStorageValueByRegex = (regex: RegExp) => {
   const keys = Object.keys(localStorage);
   const key = keys.find((key) => key.match(regex));
@@ -23,8 +21,13 @@ const observer = new MutationObserver(() => {
   }, 500);
 });
 
-waitQuerySelectorAll("#root").then((root) => {
-  observer.observe(root[0], {
+setTimeout(() => {
+  const root = document.querySelector("#root");
+  if (!root) {
+    alert("[エラー] 管理者に問い合わせてください。(errorId:rnf)");
+    return;
+  }
+  observer.observe(root, {
     childList: true,
   });
-});
+}, 500);
