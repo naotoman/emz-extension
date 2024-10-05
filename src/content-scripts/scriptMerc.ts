@@ -1,3 +1,5 @@
+import { queryAndUpdateToken } from "./aws";
+
 interface ItemState {
   isListed: boolean;
 }
@@ -10,7 +12,7 @@ const scrapeItemPage = () => {
 };
 
 const batchGetItems = (() => {
-  const itemCache: {
+  let itemCache: {
     searchUrls: string[];
     result: Map<string, ItemState>;
   } = {
@@ -40,29 +42,20 @@ const batchGetItems = (() => {
         }
       }
     `;
-
-    const storage = await chrome.storage.local.get("auth");
-    if (!storage.auth) {
-      console.log("auth not found");
-      return;
+    const responseData = await queryAndUpdateToken(query);
+    if (!responseData) {
+      console.error("failed to get item info");
+      return new Map();
     }
+    const itemStates = responseData.batchGetItem as ItemState[];
 
-    const res = await fetch(__API_URL__, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/graphql",
-        Authorization: storage.auth.idToken,
-      },
-      body: JSON.stringify({
-        query: query,
-      }),
-    });
-
-    console.log("res", res.json());
-
-    itemCache.searchUrls = itemUrls;
-    // itemCache.result = res;
-    return res;
+    itemCache = {
+      searchUrls: itemUrls,
+      result: new Map(
+        itemStates.filter(Boolean).map((v, i) => [itemUrls[i], v])
+      ),
+    };
+    return itemCache.result;
   };
 })();
 
