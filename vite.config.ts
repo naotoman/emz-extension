@@ -47,6 +47,7 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       __API_URL__: JSON.stringify(config.apiUrl),
+      __USER_POOL_CLIENT_ID__: JSON.stringify(config.userPoolClientID),
     },
   };
 });

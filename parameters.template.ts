@@ -3,6 +3,7 @@ import { ConfigParameters, getConfigType } from "./parameters.type";
 const devConfig: ConfigParameters = {
   apiUrl: "https://xxx.appsync-api.ap-northeast-1.amazonaws.com/graphql",
   siteUrl: "https://example.com",
+  userPoolClientID: "xxx",
 };
 
 // const prdConfig: ConfigParameters = {
