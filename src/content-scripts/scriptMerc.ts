@@ -1,15 +1,9 @@
 import { queryAndUpdateToken } from "./aws";
+import { scrapeMerc, scrapeMshop } from "./scraper";
 
 interface ItemState {
   isListed: boolean;
 }
-
-const scrapeItemPage = () => {
-  // TODO: Implement
-  return {
-    url: location.href,
-  };
-};
 
 const batchGetItems = (() => {
   let itemCache: {
@@ -28,7 +22,7 @@ const batchGetItems = (() => {
     return true;
   };
 
-  return async (itemUrls: string[]) => {
+  return async (itemUrls: string[]): Promise<Map<string, ItemState>> => {
     // If it matches the cache, return the cache
     if (isArrayEqual(itemUrls, itemCache.searchUrls)) {
       console.log("return cached item info");
@@ -59,6 +53,23 @@ const batchGetItems = (() => {
   };
 })();
 
+const overrideItem = (parent: Element, itemInfo: ItemState) => {
+  const overlayImg = document.createElement("div");
+  overlayImg.style.cssText =
+    "content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); z-index: 998;";
+  overlayImg.className = "extoverlay";
+  parent.appendChild(overlayImg);
+
+  const overrideTxt = document.createElement("div");
+  overrideTxt.style.cssText =
+    "color:white; position:absolute; top:50%; left:50%; transform: translate(-50%,-50%); font-size: xx-large; font-weight: bold; z-index: 999;";
+  if (itemInfo.isListed) {
+    overrideTxt.textContent = "LI";
+  }
+  overrideTxt.className = "extoverlay";
+  parent.appendChild(overrideTxt);
+};
+
 const handleSearchMutation = async () => {
   const itemNodes = document.querySelectorAll<HTMLAnchorElement>(
     'li[data-testid="item-cell"] a[data-testid="thumbnail-link"]'
@@ -66,15 +77,52 @@ const handleSearchMutation = async () => {
   const itemUrls = Array.from(itemNodes).map((node) => node.href);
   const registeredItems = await batchGetItems(itemUrls);
   console.log("registeredItems", registeredItems);
+
+  itemNodes.forEach((node) => {
+    const picNode = node.querySelector("picture");
+    if (picNode == null) {
+      console.log("[ERROR] picture tag was not found.");
+      return;
+    }
+    const overlayDivs = picNode.querySelectorAll("div.extoverlay");
+    if (registeredItems.has(node.href) && overlayDivs.length === 0) {
+      overrideItem(picNode, registeredItems.get(node.href)!);
+    } else if (!registeredItems.has(node.href)) {
+      overlayDivs.forEach((element) => element.remove());
+    }
+  });
 };
 
-const handleItemMutation = (extElem: Element) => {
+const handleItemMutationMerc = (extElem: Element) => {
   const main = document.querySelector("main");
   if (!main) return;
   main.onclick = async () => {
-    const stock = scrapeItemPage();
+    const stock = scrapeMerc();
+    if (stock.stockStatus === "outofstock") {
+      console.log("out of stock");
+      return;
+    }
     await chrome.storage.local.set({
-      stock: stock,
+      stock: stock.stockData,
+    });
+    console.log("set stock", stock);
+  };
+  if (!main.contains(extElem)) {
+    main.prepend(extElem);
+  }
+};
+
+const handleItemMutationMshop = (extElem: Element) => {
+  const main = document.querySelector("main");
+  if (!main) return;
+  main.onclick = async () => {
+    const stock = scrapeMshop();
+    if (stock.stockStatus === "outofstock") {
+      console.log("out of stock");
+      return;
+    }
+    await chrome.storage.local.set({
+      stock: stock.stockData,
     });
     console.log("set stock", stock);
   };
@@ -112,9 +160,9 @@ const observer = (() => {
       if (location.pathname === "/search") {
         await handleSearchMutation();
       } else if (location.pathname.startsWith("/item/")) {
-        handleItemMutation(extElem);
+        handleItemMutationMerc(extElem);
       } else if (location.pathname.startsWith("/shops/product/")) {
-        handleItemMutation(extElem);
+        handleItemMutationMshop(extElem);
       }
     }, 500);
   });
@@ -127,7 +175,7 @@ observer.observe(document, {
 
 chrome.storage.onChanged.addListener((changes) => {
   console.log("storage changed", changes);
-  if (changes.stock?.newValue?.url === location.href) {
+  if (changes.stock?.newValue?.core.url === location.href) {
     extElem.style.border = "gold 2px solid";
   } else {
     extElem.style.border = "none";
