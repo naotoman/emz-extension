@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
         js: ["src/content-scripts/scriptEbay.ts"],
       },
       {
-        matches: [config.siteUrl],
+        matches: [config.siteUrl + "/*"],
         run_at: "document_idle",
         js: ["src/content-scripts/scriptSystem.ts"],
       },
