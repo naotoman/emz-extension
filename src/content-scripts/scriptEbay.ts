@@ -1,9 +1,10 @@
+import { queryAndUpdateToken } from "./aws";
 import "./ebay.css";
 
 const getDescription = () => {
   const desc = document
-    .querySelector<HTMLIFrameElement>("#se-rte-frame__summary")
-    ?.contentWindow?.document.querySelector("html")?.outerHTML;
+    .querySelector('div.summary__description textarea[name="description"]')
+    ?.textContent?.trim();
   if (!desc) {
     throw new Error("description could not be found.");
   }
@@ -46,7 +47,7 @@ const getStoreCategories = () => {
   }
 };
 
-const getCondition = async () => {
+const getCondition = () => {
   const root = document.querySelector("div.summary__condition");
   const conditionId = root?.querySelector<HTMLOptionElement>(
     'select[name="condition"] option[selected]'
@@ -56,9 +57,8 @@ const getCondition = async () => {
   }
   const conditionDesc = root
     ?.querySelector("#summary-condition-field-value")
-    ?.textContent?.trim()
-    .toLowerCase();
-  if (!conditionDesc) {
+    ?.textContent?.trim();
+  if (conditionDesc) {
     return { ebayConditionSrc: conditionDesc };
   }
   throw new Error("コンディションを取得できませんでした");
@@ -208,16 +208,20 @@ const handleClickRegister = async (shippingYen: number) => {
     };
     console.log(item);
 
-    // const query = `
-    //   mutation MyMutation {
-    //     registerItem(input: ${JSON.stringify(item)})
-    //   }`;
+    const queryVariables = Object.entries(item)
+      .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
+      .join();
 
-    // const responseData = await queryAndUpdateToken(query);
-    // if (!responseData) {
-    //   console.error("failed to get item info");
-    //   throw new Error("商品情報の登録に失敗しました");
-    // }
+    const query = `
+      mutation MyMutation {
+        registerItem(input: {${queryVariables}})
+      }`;
+
+    const responseData = await queryAndUpdateToken(query);
+    if (!responseData) {
+      console.error("failed to get item info");
+      throw new Error("商品情報の登録に失敗しました");
+    }
   } catch (err) {
     console.error(err);
     alert(err);

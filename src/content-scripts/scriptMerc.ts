@@ -45,9 +45,7 @@ const batchGetItems = (() => {
 
     itemCache = {
       searchUrls: itemUrls,
-      result: new Map(
-        itemStates.filter(Boolean).map((v, i) => [itemUrls[i], v])
-      ),
+      result: new Map(itemStates.map((v, i) => [itemUrls[i], v])),
     };
     return itemCache.result;
   };
@@ -75,8 +73,8 @@ const handleSearchMutation = async () => {
     'li[data-testid="item-cell"] a[data-testid="thumbnail-link"]'
   );
   const itemUrls = Array.from(itemNodes).map((node) => node.href);
-  const registeredItems = await batchGetItems(itemUrls);
-  console.log("registeredItems", registeredItems);
+  const searchedItems = await batchGetItems(itemUrls);
+  console.log("searchedItems", searchedItems);
 
   itemNodes.forEach((node) => {
     const picNode = node.querySelector("picture");
@@ -85,9 +83,9 @@ const handleSearchMutation = async () => {
       return;
     }
     const overlayDivs = picNode.querySelectorAll("div.extoverlay");
-    if (registeredItems.has(node.href) && overlayDivs.length === 0) {
-      overrideItem(picNode, registeredItems.get(node.href)!);
-    } else if (!registeredItems.has(node.href)) {
+    if (searchedItems.get(node.href) && overlayDivs.length === 0) {
+      overrideItem(picNode, searchedItems.get(node.href)!);
+    } else if (!searchedItems.get(node.href)) {
       overlayDivs.forEach((element) => element.remove());
     }
   });
