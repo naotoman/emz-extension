@@ -91,42 +91,76 @@ const handleSearchMutation = async () => {
   });
 };
 
-const handleItemMutationMerc = (extElem: Element) => {
-  const main = document.querySelector("main");
-  if (!main) return;
-  main.onclick = async () => {
-    const stock = scrapeMerc();
-    if (stock.stockStatus === "outofstock") {
-      console.log("out of stock");
-      return;
-    }
-    await chrome.storage.local.set({
-      stock: stock.stockData,
-    });
-    console.log("set stock", stock);
-  };
-  if (!main.contains(extElem)) {
-    main.prepend(extElem);
-  }
-};
+// const handleItemMutationMerc = (extElem: Element) => {
+//   const main = document.querySelector("main");
+//   if (!main) return;
+//   main.onclick = async () => {
+//     const stock = scrapeMerc();
+//     if (stock.stockStatus === "outofstock") {
+//       console.log("out of stock");
+//       return;
+//     }
+//     await chrome.storage.local.set({
+//       stock: stock.stockData,
+//     });
+//     console.log("set stock", stock);
+//   };
+//   if (!main.contains(extElem)) {
+//     main.prepend(extElem);
+//   }
+// };
 
-const handleItemMutationMshop = (extElem: Element) => {
-  const main = document.querySelector("main");
-  if (!main) return;
-  main.onclick = async () => {
-    const stock = scrapeMshop();
-    if (stock.stockStatus === "outofstock") {
-      console.log("out of stock");
-      return;
-    }
-    await chrome.storage.local.set({
-      stock: stock.stockData,
-    });
-    console.log("set stock", stock);
-  };
-  if (!main.contains(extElem)) {
-    main.prepend(extElem);
+// const handleItemMutationMshop = (extElem: Element) => {
+//   const main = document.querySelector("main");
+//   if (!main) return;
+//   main.onclick = async () => {
+//     const stock = scrapeMshop();
+//     if (stock.stockStatus === "outofstock") {
+//       console.log("out of stock");
+//       return;
+//     }
+//     await chrome.storage.local.set({
+//       stock: stock.stockData,
+//     });
+//     console.log("set stock", stock);
+//   };
+//   if (!main.contains(extElem)) {
+//     main.prepend(extElem);
+//   }
+// };
+
+const handleClickRegister = async (shippingYen: number) => {
+  const stock = location.pathname.startsWith("/item/")
+    ? scrapeMerc()
+    : scrapeMshop();
+  if (stock.stockStatus === "outofstock" || !stock.stockData) {
+    console.log("out of stock");
+    return;
   }
+  const item = {
+    shippingYen,
+    orgUrl: stock.stockData.core.url,
+    orgImageUrls: stock.stockData.core.imageUrls,
+    orgPrice: stock.stockData.core.price,
+    orgExtraParam: JSON.stringify(stock.stockData.extra),
+  };
+
+  const queryVariables = Object.entries(item)
+    .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
+    .join();
+
+  const query = `
+      mutation MyMutation {
+        registerItemChatGpt(input: {${queryVariables}})
+      }`;
+
+  console.log(query);
+
+  // const responseData = await queryAndUpdateToken(query);
+  // if (!responseData) {
+  //   console.error("failed to register item");
+  //   alert("登録に失敗しました");
+  // }
 };
 
 const extElem = (() => {
@@ -148,6 +182,99 @@ const extElem = (() => {
   return elem;
 })();
 
+const extElemGpt = new (class {
+  outerDiv: HTMLDivElement;
+  constructor() {
+    const showDimensionExamples = (weightKg: number) => {
+      const volume = weightKg * 5000;
+      const calcDims = (r1: number, r2: number) => {
+        const base = Math.cbrt(volume / (r1 * r2));
+        return (
+          Math.floor(base * r1) +
+          " " +
+          Math.floor(base * r2) +
+          " " +
+          Math.floor(base)
+        );
+      };
+      return `(${calcDims(2, 1.5)}), (${calcDims(1.8, 1.3)}), (${calcDims(
+        1.5,
+        1.1
+      )})`;
+    };
+
+    const selectShipping = document.createElement("select");
+    selectShipping.className = "emmext-select";
+    selectShipping.innerHTML = `
+    <option value="0" selected>自動（chatgpt）</option>
+    <option value="1670">小型包装物（500g 最長60cm 合計90cm）</option>
+    <option value="3000">FedEx 500g ${showDimensionExamples(0.5)}</option>
+    <option value="3300">FedEx 1kg ${showDimensionExamples(1)}</option>
+    <option value="3700">FedEx 2kg ${showDimensionExamples(2)}</option>
+    <option value="5000">FedEx 3kg ${showDimensionExamples(3)}</option>
+    <option value="5800">FedEx 4kg ${showDimensionExamples(4)}</option>
+    <option value="7100">FedEx 5kg ${showDimensionExamples(5)}</option>
+    `;
+
+    const selectDiv = document.createElement("div");
+    selectDiv.id = "emmext-selectdiv";
+    selectDiv.append(selectShipping);
+
+    const registerBtn = document.createElement("button");
+    registerBtn.id = "emmext-registerbtn";
+    registerBtn.textContent = "登録";
+    registerBtn.onclick = async () =>
+      handleClickRegister(Number(selectShipping.value));
+
+    this.outerDiv = document.createElement("div");
+    this.outerDiv.id = "emmext-outerdiv";
+
+    const css = `#emmext-outerdiv {
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+  height: 40px;
+}
+#emmext-registerbtn {
+  height: 100%;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 60px;
+  cursor: pointer;
+  font-weight: bold;
+}
+#emmext-selectdiv {
+  height: 100%;
+  margin-right: 16px;
+}
+.emmext-select {
+  height: 100%;
+  width: 120px;
+  padding: 3px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+`;
+    const cssNode = document.createElement("style");
+    cssNode.appendChild(document.createTextNode(css));
+
+    this.outerDiv.append(cssNode);
+    this.outerDiv.append(selectDiv);
+    this.outerDiv.append(registerBtn);
+  }
+  attach() {
+    const picNode = document.querySelector('div[data-testid="carousel"]');
+    if (!picNode) return;
+    const baseDiv = picNode.parentNode;
+    if (baseDiv && !baseDiv.contains(this.outerDiv)) {
+      picNode.append(this.outerDiv);
+    }
+  }
+})();
+
 const observer = (() => {
   let randNum = 0;
   return new MutationObserver(() => {
@@ -158,9 +285,11 @@ const observer = (() => {
       if (location.pathname === "/search") {
         await handleSearchMutation();
       } else if (location.pathname.startsWith("/item/")) {
-        handleItemMutationMerc(extElem);
+        // handleItemMutationMerc(extElem);
+        extElemGpt.attach();
       } else if (location.pathname.startsWith("/shops/product/")) {
-        handleItemMutationMshop(extElem);
+        // handleItemMutationMshop(extElem);
+        extElemGpt.attach();
       }
     }, 500);
   });
