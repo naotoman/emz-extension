@@ -3,6 +3,7 @@ export interface StockCore {
   imageUrls: string[];
   price: number;
   title: string;
+  description: string;
 }
 
 export interface Merc {
@@ -57,6 +58,11 @@ export const scrapeMerc: Scraper<Merc> = () => {
     )
   ).map((img) => img.src);
   console.log({ imageUrls: imageUrls.join(",") });
+
+  const description = document.querySelector<HTMLPreElement>(
+    '#item-info pre[data-testid="description"]'
+  )?.textContent;
+  console.log({ description });
 
   const title =
     document.querySelector<HTMLHeadingElement>("#item-info h1")?.textContent;
@@ -127,7 +133,8 @@ export const scrapeMerc: Scraper<Merc> = () => {
     Number.isNaN(rateScore) ||
     Number.isNaN(rateCount) ||
     imageUrls.length === 0 ||
-    !title
+    !title ||
+    !description
   ) {
     throw new Error(
       "Scraping failed.\n" +
@@ -145,6 +152,7 @@ export const scrapeMerc: Scraper<Merc> = () => {
             rateCount,
             imageUrls,
             title,
+            description,
           },
           (_, v) => (v === undefined ? "UNDEFINED!" : v)
         )
@@ -159,6 +167,7 @@ export const scrapeMerc: Scraper<Merc> = () => {
         imageUrls: imageUrls,
         title: title,
         price: price,
+        description: description,
       },
       extra: {
         lastUpdated: lastUpdated,
@@ -199,8 +208,13 @@ export const scrapeMshop: Scraper<Mshop> = () => {
   console.log({ imageUrls: imageUrls.join(",") });
 
   const title =
-    document.querySelector<HTMLHeadingElement>("#item-info h1")?.textContent;
+    document.querySelector<HTMLHeadingElement>("#product-info h1")?.textContent;
   console.log({ title });
+
+  const description = document.querySelector<HTMLPreElement>(
+    '#product-info pre[data-testid="description"]'
+  )?.textContent;
+  console.log({ description });
 
   const priceSpans = document.querySelectorAll<HTMLSpanElement>(
     '#product-info div[data-testid="product-price"] span'
@@ -267,7 +281,8 @@ export const scrapeMshop: Scraper<Mshop> = () => {
     Number.isNaN(rateScore) ||
     Number.isNaN(rateCount) ||
     imageUrls.length === 0 ||
-    !title
+    !title ||
+    !description
   ) {
     throw new Error(
       "Scraping failed.\n" +
@@ -285,6 +300,7 @@ export const scrapeMshop: Scraper<Mshop> = () => {
             rateCount,
             imageUrls,
             title,
+            description,
           },
           (_, v) => (v === undefined ? "UNDEFINED!" : v)
         )
@@ -299,6 +315,7 @@ export const scrapeMshop: Scraper<Mshop> = () => {
         imageUrls: imageUrls,
         price: price,
         title: title,
+        description: description,
       },
       extra: {
         lastUpdated: lastUpdated,

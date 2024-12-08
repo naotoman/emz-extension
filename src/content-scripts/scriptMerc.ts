@@ -142,6 +142,8 @@ const handleClickRegister = async (shippingYen: number) => {
     orgUrl: stock.stockData.core.url,
     orgImageUrls: stock.stockData.core.imageUrls,
     orgPrice: stock.stockData.core.price,
+    orgTitle: stock.stockData.core.title,
+    orgDescription: stock.stockData.core.description,
     orgExtraParam: JSON.stringify(stock.stockData.extra),
   };
 
@@ -156,11 +158,11 @@ const handleClickRegister = async (shippingYen: number) => {
 
   console.log(query);
 
-  // const responseData = await queryAndUpdateToken(query);
-  // if (!responseData) {
-  //   console.error("failed to register item");
-  //   alert("登録に失敗しました");
-  // }
+  const responseData = await queryAndUpdateToken(query);
+  if (!responseData) {
+    console.error("failed to register item");
+    alert("登録に失敗しました");
+  }
 };
 
 const extElem = (() => {
