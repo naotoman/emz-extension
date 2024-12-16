@@ -7,45 +7,51 @@ interface ItemState {
 
 const batchGetItems = (() => {
   let itemCache: {
-    searchUrls: string[];
+    searchUrls: Set<string>;
     result: Map<string, ItemState>;
   } = {
-    searchUrls: [],
+    searchUrls: new Set(),
     result: new Map(),
   };
 
-  const isArrayEqual = (a: string[], b: string[]) => {
-    if (a.length !== b.length) return false;
-    for (let i = 0, n = a.length; i < n; ++i) {
-      if (a[i] !== b[i]) return false;
+  const isSetEqual = (a: Set<string>, b: Set<string>) => {
+    if (a.size !== b.size) return false;
+    for (const elem of a) {
+      if (!b.has(elem)) return false;
     }
     return true;
   };
 
-  return async (itemUrls: string[]): Promise<Map<string, ItemState>> => {
+  return async (itemUrls: Set<string>): Promise<Map<string, ItemState>> => {
     // If it matches the cache, return the cache
-    if (isArrayEqual(itemUrls, itemCache.searchUrls)) {
+    if (isSetEqual(itemUrls, itemCache.searchUrls)) {
       console.log("return cached item info");
       return itemCache.result;
     }
 
-    const query = `
-      query MyQuery {
-        batchGetItem(input: {urls: ${JSON.stringify(itemUrls)}}) {
-          isListed
-        }
+    let itemStates = [] as ItemState[];
+    const itemUrlsArray = Array.from(itemUrls);
+    for (let i = 0; i < itemUrlsArray.length; i += 100) {
+      const query = `
+            query MyQuery {
+              batchGetItem(input: {urls: ${JSON.stringify(
+                itemUrlsArray.slice(i, i + 100)
+              )}}) {
+                isListed
+              }
+            }
+          `;
+      const responseData = await queryAndUpdateToken(query);
+      if (!responseData) {
+        console.error("failed to get item info");
+        return new Map();
       }
-    `;
-    const responseData = await queryAndUpdateToken(query);
-    if (!responseData) {
-      console.error("failed to get item info");
-      return new Map();
+      itemStates = itemStates.concat(responseData.batchGetItem as ItemState[]);
     }
-    const itemStates = responseData.batchGetItem as ItemState[];
 
     itemCache = {
       searchUrls: itemUrls,
-      result: new Map(itemStates.map((v, i) => [itemUrls[i], v])),
+      result: new Map(itemStates.map((v, i) => [itemUrlsArray[i], v])),
     };
     return itemCache.result;
   };
@@ -70,9 +76,9 @@ const overrideItem = (parent: Element, itemInfo: ItemState) => {
 
 const handleSearchMutation = async () => {
   const itemNodes = document.querySelectorAll<HTMLAnchorElement>(
-    'li[data-testid="item-cell"] a[data-testid="thumbnail-link"]'
+    'a[data-location$=":item_thumbnail"]'
   );
-  const itemUrls = Array.from(itemNodes).map((node) => node.href);
+  const itemUrls = new Set(Array.from(itemNodes).map((node) => node.href));
   const searchedItems = await batchGetItems(itemUrls);
   console.log("searchedItems", searchedItems);
 
@@ -284,15 +290,14 @@ const observer = (() => {
     randNum = tmp;
     setTimeout(async () => {
       if (randNum !== tmp) return;
-      if (location.pathname === "/search") {
-        await handleSearchMutation();
-      } else if (location.pathname.startsWith("/item/")) {
+      if (location.pathname.startsWith("/item/")) {
         // handleItemMutationMerc(extElem);
         extElemGpt.attach();
       } else if (location.pathname.startsWith("/shops/product/")) {
         // handleItemMutationMshop(extElem);
         extElemGpt.attach();
       }
+      await handleSearchMutation();
     }, 500);
   });
 })();
