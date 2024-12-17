@@ -141,6 +141,7 @@ const handleClickRegister = async (shippingYen: number) => {
     : scrapeMshop();
   if (stock.stockStatus === "outofstock" || !stock.stockData) {
     console.log("out of stock");
+    alert("売り切れの商品は登録できません");
     return;
   }
   const item = {
@@ -166,8 +167,7 @@ const handleClickRegister = async (shippingYen: number) => {
 
   const responseData = await queryAndUpdateToken(query);
   if (!responseData) {
-    console.error("failed to register item");
-    alert("登録に失敗しました");
+    throw new Error("failed to register item");
   }
 };
 
@@ -192,92 +192,128 @@ const extElem = (() => {
 
 const extElemGpt = new (class {
   outerDiv: HTMLDivElement;
+  registerBtn: HTMLButtonElement;
   constructor() {
-    const showDimensionExamples = (weightKg: number) => {
-      const volume = weightKg * 5000;
-      const calcDims = (r1: number, r2: number) => {
-        const base = Math.cbrt(volume / (r1 * r2));
-        return (
-          Math.floor(base * r1) +
-          " " +
-          Math.floor(base * r2) +
-          " " +
-          Math.floor(base)
-        );
-      };
-      return `(${calcDims(2, 1.5)}), (${calcDims(1.8, 1.3)}), (${calcDims(
-        1.5,
-        1.1
-      )})`;
+    this.registerBtn = document.createElement("button");
+    this.registerBtn.className = "emz-chatgpt-btn";
+    this.registerBtn.onclick = () => {
+      this.registerBtn.disabled = true;
+      this.registerBtn.classList.add("emz-onclic");
+      handleClickRegister(0)
+        .then(() => {
+          this.registerBtn.classList.remove("emz-onclic");
+          this.registerBtn.classList.add("emz-validate");
+        })
+        .catch((e) => {
+          console.error(e);
+          alert("登録に失敗しました");
+          this.registerBtn.disabled = false;
+          this.registerBtn.classList.remove("emz-onclic");
+        });
     };
 
-    const selectShipping = document.createElement("select");
-    selectShipping.className = "emmext-select";
-    selectShipping.innerHTML = `
-    <option value="0" selected>自動（chatgpt）</option>
-    <option value="1670">小型包装物（500g 最長60cm 合計90cm）</option>
-    <option value="3000">FedEx 500g ${showDimensionExamples(0.5)}</option>
-    <option value="3300">FedEx 1kg ${showDimensionExamples(1)}</option>
-    <option value="3700">FedEx 2kg ${showDimensionExamples(2)}</option>
-    <option value="5000">FedEx 3kg ${showDimensionExamples(3)}</option>
-    <option value="5800">FedEx 4kg ${showDimensionExamples(4)}</option>
-    <option value="7100">FedEx 5kg ${showDimensionExamples(5)}</option>
-    `;
-
-    const selectDiv = document.createElement("div");
-    selectDiv.id = "emmext-selectdiv";
-    selectDiv.append(selectShipping);
-
-    const registerBtn = document.createElement("button");
-    registerBtn.id = "emmext-registerbtn";
-    registerBtn.textContent = "登録";
-    registerBtn.onclick = async () =>
-      handleClickRegister(Number(selectShipping.value));
-
     this.outerDiv = document.createElement("div");
-    this.outerDiv.id = "emmext-outerdiv";
+    this.outerDiv.className = "emz-chatgpt-outerdiv";
 
-    const css = `#emmext-outerdiv {
+    const css = `.emz-chatgpt-outerdiv {
+  font-family: "Roboto", sans-serif;
+  margin-top: 30px;
+  width: 100%;
+  height: 50px;
+  text-align: center;
   display: flex;
-  align-items: center;
-  margin-top: 16px;
-  height: 40px;
+  justify-content: center;
 }
-#emmext-registerbtn {
-  height: 100%;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  width: 60px;
-  cursor: pointer;
+.emz-chatgpt-btn {
+  outline: none;
+  height: 50px;
+  width: 240px;
+  text-align: center;
+  background: #fff;
+  color: #1ECD97;
+  border: 3px solid #1ECD97;
+  border-radius: 40px;
+  letter-spacing: 2px;
+  text-shadow: 0;
+  font-size: 18px;
   font-weight: bold;
+  cursor: pointer;
+  transition: all 0.25s ease;
 }
-#emmext-selectdiv {
-  height: 100%;
-  margin-right: 16px;
+@media (prefers-color-scheme: dark) {
+  .emz-chatgpt-btn {
+    background: #333;
+  }
 }
-.emmext-select {
-  height: 100%;
-  width: 120px;
-  padding: 3px;
-  border: 1px solid #cccccc;
-  border-radius: 4px;
-  font-size: 0.8rem;
+.emz-chatgpt-btn:hover {
+  color: white;
+  background: #1ECD97;
+}
+.emz-chatgpt-btn:active {
+  letter-spacing: 4px;
+}
+.emz-chatgpt-btn:after {
+  content: "SUBMIT";
+}
+.emz-onclic {
+  width: 50px;
+  border-color: #bbbbbb;
+  border-width: 3px;
+  font-size: 0;
+  border-left-color: #1ECD97;
+  -webkit-animation: emzrotating 2s 0.25s linear infinite;
+          animation: emzrotating 2s 0.25s linear infinite;
+}
+.emz-onclic:after {
+  content: "";
+}
+.emz-onclic:hover {
+  color: #1ECD97;
+  background: white;
+}
+.emz-validate {
+  font-size: 20px;
+  color: white;
+  background: #1ECD97;
+}
+.emz-validate:after {
+  content: "✔";
+ }
+@-webkit-keyframes emzrotating {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes emzrotating {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.emz-chatgpt-btn:disabled {
+  cursor: default;
 }
 `;
     const cssNode = document.createElement("style");
     cssNode.appendChild(document.createTextNode(css));
 
     this.outerDiv.append(cssNode);
-    this.outerDiv.append(selectDiv);
-    this.outerDiv.append(registerBtn);
+    this.outerDiv.append(this.registerBtn);
   }
   attach() {
     const picNode = document.querySelector('div[data-testid="carousel"]');
     if (!picNode) return;
     const baseDiv = picNode.parentNode;
     if (baseDiv && !baseDiv.contains(this.outerDiv)) {
+      this.registerBtn.classList.remove("emz-onclic");
+      this.registerBtn.classList.remove("emz-validate");
+      this.registerBtn.disabled = false;
       picNode.append(this.outerDiv);
     }
   }
