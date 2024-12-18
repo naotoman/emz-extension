@@ -167,7 +167,7 @@ const extElem = new (class {
     `;
     chrome.storage.local.get(["stock"]).then((result) => {
       if (result.stock.core.url === location.href) {
-        this.elem.style.border = "gold 2px solid";
+        this.elem.style.border = "gold 3px solid";
         this.elem.style.pointerEvents = "none";
       }
     });
@@ -175,7 +175,7 @@ const extElem = new (class {
   attach() {
     chrome.storage.local.get(["stock"]).then((result) => {
       if (result.stock.core.url === location.href) {
-        this.elem.style.border = "gold 2px solid";
+        this.elem.style.border = "gold 3px solid";
         this.elem.style.pointerEvents = "none";
       } else {
         this.elem.style.border = "none";
