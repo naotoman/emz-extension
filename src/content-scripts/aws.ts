@@ -11,12 +11,10 @@ const getIdToken = async (refreshToken: string) => {
       AuthParameters: { REFRESH_TOKEN: refreshToken },
     }),
   });
-  console.log(res.status, res.statusText);
   if (!res.ok) {
     return null;
   }
   const data = await res.json();
-  console.log(data);
   return data.AuthenticationResult.IdToken as string;
 };
 
@@ -36,6 +34,10 @@ const apiPost = async (query: string, idToken: string) => {
     return null;
   }
   const data = await res.json();
+  console.log(data);
+  if (data.errors) {
+    return null;
+  }
   return data.data;
 };
 
