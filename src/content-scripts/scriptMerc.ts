@@ -1,5 +1,5 @@
 import { queryAndUpdateToken } from "./aws";
-import { scrapeMerc, scrapeMshop } from "./scraper";
+import { Merc, Mshop, scrapeMerc, scrapeMshop, ScrapeResult } from "./scraper";
 
 interface ItemState {
   isListed: boolean;
@@ -97,44 +97,6 @@ const handleSearchMutation = async () => {
   });
 };
 
-// const handleItemMutationMerc = (extElem: Element) => {
-//   const main = document.querySelector("main");
-//   if (!main) return;
-//   main.onclick = async () => {
-//     const stock = scrapeMerc();
-//     if (stock.stockStatus === "outofstock") {
-//       console.log("out of stock");
-//       return;
-//     }
-//     await chrome.storage.local.set({
-//       stock: stock.stockData,
-//     });
-//     console.log("set stock", stock);
-//   };
-//   if (!main.contains(extElem)) {
-//     main.prepend(extElem);
-//   }
-// };
-
-// const handleItemMutationMshop = (extElem: Element) => {
-//   const main = document.querySelector("main");
-//   if (!main) return;
-//   main.onclick = async () => {
-//     const stock = scrapeMshop();
-//     if (stock.stockStatus === "outofstock") {
-//       console.log("out of stock");
-//       return;
-//     }
-//     await chrome.storage.local.set({
-//       stock: stock.stockData,
-//     });
-//     console.log("set stock", stock);
-//   };
-//   if (!main.contains(extElem)) {
-//     main.prepend(extElem);
-//   }
-// };
-
 const handleClickRegister = async (shippingYen: number) => {
   const stock = location.pathname.startsWith("/item/")
     ? scrapeMerc()
@@ -171,23 +133,66 @@ const handleClickRegister = async (shippingYen: number) => {
   }
 };
 
-const extElem = (() => {
-  const elem = document.createElement("div");
-  elem.style.cssText = `
+const extElem = new (class {
+  elem: HTMLDivElement;
+  constructor() {
+    this.elem = document.createElement("div");
+    this.elem.onclick = () => {
+      let stock: ScrapeResult<Mshop> | ScrapeResult<Merc> | undefined;
+      if (location.pathname.startsWith("/shops/product/")) {
+        stock = scrapeMshop();
+      } else if (location.pathname.startsWith("/item/")) {
+        stock = scrapeMerc();
+      }
+      if (!stock) return;
+      if (stock.stockStatus === "outofstock") {
+        console.log("out of stock");
+        return;
+      }
+      chrome.storage.local
+        .set({
+          stock: stock.stockData,
+        })
+        .then(() => {
+          console.log("set stock", stock);
+        });
+    };
+    this.elem.style.cssText = `
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       z-index: 9999;
-      pointer-events: none;
     `;
-  chrome.storage.local.get(["stock"]).then((result) => {
-    if (result.stock?.url === location.href) {
-      elem.style.border = "gold 2px solid";
+    chrome.storage.local.get(["stock"]).then((result) => {
+      if (result.stock.core.url === location.href) {
+        this.elem.style.border = "gold 2px solid";
+        this.elem.style.pointerEvents = "none";
+      }
+    });
+  }
+  attach() {
+    chrome.storage.local.get(["stock"]).then((result) => {
+      if (result.stock.core.url === location.href) {
+        this.elem.style.border = "gold 2px solid";
+        this.elem.style.pointerEvents = "none";
+      } else {
+        this.elem.style.border = "none";
+        this.elem.style.pointerEvents = "auto";
+      }
+    });
+    const main = document.querySelector("main");
+    if (main && !main.contains(this.elem)) {
+      main.append(this.elem);
     }
-  });
-  return elem;
+  }
+  detach() {
+    const main = document.querySelector("main");
+    if (main && main.contains(this.elem)) {
+      main.removeChild(this.elem);
+    }
+  }
 })();
 
 const extElemGpt = new (class {
@@ -314,10 +319,40 @@ const extElemGpt = new (class {
       this.registerBtn.classList.remove("emz-onclic");
       this.registerBtn.classList.remove("emz-validate");
       this.registerBtn.disabled = false;
-      picNode.append(this.outerDiv);
+      baseDiv.append(this.outerDiv);
+    }
+  }
+  detach() {
+    const picNode = document.querySelector('div[data-testid="carousel"]');
+    if (!picNode) return;
+    const baseDiv = picNode.parentNode;
+    if (baseDiv && baseDiv.contains(this.outerDiv)) {
+      baseDiv.removeChild(this.outerDiv);
     }
   }
 })();
+
+const renderWholeExtension = async () => {
+  const storage = await chrome.storage.local.get(["isGptEnabled"]);
+  if (
+    storage.isGptEnabled &&
+    (location.pathname.startsWith("/shops/product/") ||
+      location.pathname.startsWith("/item/"))
+  ) {
+    extElemGpt.attach();
+    extElem.detach();
+  } else if (
+    location.pathname.startsWith("/shops/product/") ||
+    location.pathname.startsWith("/item/")
+  ) {
+    extElemGpt.detach();
+    extElem.attach();
+  } else {
+    extElemGpt.detach();
+    extElem.detach();
+  }
+  await handleSearchMutation();
+};
 
 const observer = (() => {
   let randNum = 0;
@@ -326,14 +361,7 @@ const observer = (() => {
     randNum = tmp;
     setTimeout(async () => {
       if (randNum !== tmp) return;
-      if (location.pathname.startsWith("/item/")) {
-        // handleItemMutationMerc(extElem);
-        extElemGpt.attach();
-      } else if (location.pathname.startsWith("/shops/product/")) {
-        // handleItemMutationMshop(extElem);
-        extElemGpt.attach();
-      }
-      await handleSearchMutation();
+      await renderWholeExtension();
     }, 500);
   });
 })();
@@ -345,9 +373,9 @@ observer.observe(document, {
 
 chrome.storage.onChanged.addListener((changes) => {
   console.log("storage changed", changes);
-  if (changes.stock?.newValue?.core.url === location.href) {
-    extElem.style.border = "gold 2px solid";
-  } else {
-    extElem.style.border = "none";
+  if (changes.isGptEnabled || changes.stock) {
+    renderWholeExtension().then(() => {
+      console.log("rendered");
+    });
   }
 });
