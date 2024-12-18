@@ -310,10 +310,6 @@ const extElem = new (class {
   }
 })();
 
-setTimeout(() => {
-  extElem.attach();
-}, 500);
-
 chrome.storage.onChanged.addListener((changes) => {
   console.log("storage changed", changes);
   if (!changes.stock) return;
@@ -345,7 +341,14 @@ const observer = (() => {
   });
 })();
 
-observer.observe(document, {
-  childList: true,
-  subtree: true,
+chrome.storage.local.get(["isGptEnabled"]).then((data) => {
+  if (!data.isGptEnabled) {
+    setTimeout(() => {
+      extElem.attach();
+    }, 500);
+    observer.observe(document, {
+      childList: true,
+      subtree: true,
+    });
+  }
 });
