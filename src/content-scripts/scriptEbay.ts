@@ -201,6 +201,7 @@ const handleClickRegister = async (shippingYen: number) => {
       ...getCondition(),
       ...getConditionDescription(),
       ebayAspectParam: JSON.stringify(getAttributes()),
+      orgTitle: data.stock.core.title,
       orgUrl: data.stock.core.url,
       orgImageUrls: data.stock.core.imageUrls,
       orgPrice: data.stock.core.price,
