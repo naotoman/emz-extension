@@ -184,7 +184,10 @@ const getAttributes = () => {
   }, {});
 };
 
-const handleClickRegister = async (shippingYen: number) => {
+const handleClickRegister = async (
+  shippingYen: number,
+  ebayFulfillmentPolicy: string
+) => {
   const data = await chrome.storage.local.get(["stock"]);
   if (!data.stock) {
     console.log("stock data is empty");
@@ -194,7 +197,7 @@ const handleClickRegister = async (shippingYen: number) => {
   try {
     const item = {
       shippingYen,
-      ebayFulfillmentPolicy: "TMP",
+      ebayFulfillmentPolicy,
       ebayTitle: getTitle(),
       ebayDescription: getDescription(),
       ebayCategorySrc: getEbayCategory(),
@@ -242,47 +245,33 @@ const extElem = new (class {
     this.titleDiv.id = "emmext-titlediv";
     this.titleDiv.textContent = "";
 
-    const showDimensionExamples = (weightKg: number) => {
-      const volume = weightKg * 5000;
-      const calcDims = (r1: number, r2: number) => {
-        const base = Math.cbrt(volume / (r1 * r2));
-        return (
-          Math.floor(base * r1) +
-          " " +
-          Math.floor(base * r2) +
-          " " +
-          Math.floor(base)
-        );
-      };
-      return `(${calcDims(2, 1.5)}), (${calcDims(1.8, 1.3)}), (${calcDims(
-        1.5,
-        1.1
-      )})`;
-    };
+    const inputShipping = document.createElement("select");
+    inputShipping.className = "emmext-select";
+    inputShipping.innerHTML = `
+    <option value="1600" selected>1600 (日本郵便)</option>
+    <option value="3000">3000 (FedEx)</option>
+    `;
 
-    const selectShipping = document.createElement("select");
-    selectShipping.className = "emmext-select";
-    selectShipping.innerHTML = `
-    <option value="1670">小型包装物（500g 最長60cm 合計90cm）</option>
-    <option value="3000" selected>FedEx 500g ${showDimensionExamples(
-      0.5
-    )}</option>
-    <option value="3300">FedEx 1kg ${showDimensionExamples(1)}</option>
-    <option value="3700">FedEx 2kg ${showDimensionExamples(2)}</option>
-    <option value="5000">FedEx 3kg ${showDimensionExamples(3)}</option>
-    <option value="5800">FedEx 4kg ${showDimensionExamples(4)}</option>
-    <option value="7100">FedEx 5kg ${showDimensionExamples(5)}</option>
+    const selectFulfilment = document.createElement("select");
+    selectFulfilment.className = "emmext-select";
+    selectFulfilment.innerHTML = `
+    <option value="230674690025" selected>デフォルト</option>
+    <option value="6198752000">セカンド</option>
     `;
 
     const selectDiv = document.createElement("div");
     selectDiv.id = "emmext-selectdiv";
-    selectDiv.append(selectShipping);
+    selectDiv.append(selectFulfilment);
+    selectDiv.append(inputShipping);
 
     const registerBtn = document.createElement("button");
     registerBtn.id = "emmext-registerbtn";
     registerBtn.textContent = "登録";
     registerBtn.onclick = async () =>
-      handleClickRegister(Number(selectShipping.value));
+      await handleClickRegister(
+        Number(inputShipping.value),
+        selectFulfilment.value
+      );
 
     this.outerDiv = document.createElement("div");
     this.outerDiv.id = "emmext-outerdiv";
