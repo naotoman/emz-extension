@@ -194,6 +194,7 @@ const handleClickRegister = async (shippingYen: number) => {
   try {
     const item = {
       shippingYen,
+      ebayFulfillmentPolicy: "TMP",
       ebayTitle: getTitle(),
       ebayDescription: getDescription(),
       ebayCategorySrc: getEbayCategory(),

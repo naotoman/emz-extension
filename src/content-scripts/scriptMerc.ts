@@ -97,7 +97,7 @@ const handleSearchMutation = async () => {
   });
 };
 
-const handleClickRegister = async (shippingYen: number) => {
+const handleClickRegister = async () => {
   const stock = location.pathname.startsWith("/item/")
     ? scrapeMerc()
     : scrapeMshop();
@@ -107,7 +107,6 @@ const handleClickRegister = async (shippingYen: number) => {
     return;
   }
   const item = {
-    shippingYen,
     orgUrl: stock.stockData.core.url,
     orgImageUrls: stock.stockData.core.imageUrls,
     orgPrice: stock.stockData.core.price,
@@ -204,7 +203,7 @@ const extElemGpt = new (class {
     this.registerBtn.onclick = () => {
       this.registerBtn.disabled = true;
       this.registerBtn.classList.add("emz-onclic");
-      handleClickRegister(0)
+      handleClickRegister()
         .then(() => {
           this.registerBtn.classList.remove("emz-onclic");
           this.registerBtn.classList.add("emz-validate");
