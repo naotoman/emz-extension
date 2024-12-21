@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+import Command from "./command";
 
 function App() {
   const [label, setLabel] = useState("");
+  const [showHidden, setShowHidden] = useState(false);
   const [toggle, setToggle] = useState(false);
 
   useEffect(() => {
@@ -23,10 +25,13 @@ function App() {
   return (
     <>
       <div id="text-username">{label}</div>
-      <div
-        className={toggle ? "switch on" : "switch"}
-        onClick={() => setToggle(!toggle)}
-      ></div>
+      {showHidden && (
+        <div
+          className={toggle ? "switch on" : "switch"}
+          onClick={() => setToggle(!toggle)}
+        ></div>
+      )}
+      <Command triggerAction={() => setShowHidden(true)} />
     </>
   );
 }
