@@ -1,6 +1,11 @@
 import { queryAndUpdateToken } from "./aws";
 import "./ebay.css";
 
+interface UserInfo {
+  shippingFees: [{ value: number; desc: string }];
+  fulfillmentPolicies: [{ policyId: string; desc: string }];
+}
+
 const getDescription = () => {
   const desc = document
     .querySelector('div.summary__description textarea[name="description"]')
@@ -233,10 +238,32 @@ const handleClickRegister = async (
   }
 };
 
-const extElem = new (class {
+const getUserInfo = async () => {
+  const query = `
+    query MyQuery {
+      getUserInfo {
+        shippingFees {
+          desc
+          value
+        }
+        fulfillmentPolicies {
+          desc
+          policyId
+        }
+      }
+    }
+  `;
+  const responseData = await queryAndUpdateToken(query);
+  console.log(responseData);
+  return responseData.getUserInfo as UserInfo;
+};
+
+const ExtensionElements = class {
   img: HTMLImageElement;
   titleDiv: HTMLDivElement;
   outerDiv: HTMLDivElement;
+  inputShipping: HTMLSelectElement;
+  selectFulfilment: HTMLSelectElement;
   constructor() {
     this.img = document.createElement("img");
     this.img.src = "";
@@ -245,53 +272,69 @@ const extElem = new (class {
     this.titleDiv.id = "emmext-titlediv";
     this.titleDiv.textContent = "";
 
-    const inputShipping = document.createElement("select");
-    inputShipping.className = "emmext-select";
-    inputShipping.innerHTML = `
-    <option value="1600" selected>1600 (日本郵便)</option>
-    <option value="3000">3000 (FedEx)</option>
-    `;
+    const shippingLabel = document.createElement("label");
+    shippingLabel.textContent = "送料:";
+    shippingLabel.className = "emmext-label";
+    this.inputShipping = document.createElement("select");
+    this.inputShipping.className = "emmext-select";
 
-    const selectFulfilment = document.createElement("select");
-    selectFulfilment.className = "emmext-select";
-    selectFulfilment.innerHTML = `
-    <option value="230674690025" selected>デフォルト</option>
-    <option value="6198752000">セカンド</option>
-    `;
+    const shippingDiv = document.createElement("div");
+    shippingDiv.append(shippingLabel);
+    shippingDiv.append(this.inputShipping);
+
+    const fulfilmentLabel = document.createElement("label");
+    fulfilmentLabel.textContent = "配送ポリシー:";
+    fulfilmentLabel.className = "emmext-label";
+    this.selectFulfilment = document.createElement("select");
+    this.selectFulfilment.className = "emmext-select";
+
+    const fulfilmentDiv = document.createElement("div");
+    fulfilmentDiv.append(fulfilmentLabel);
+    fulfilmentDiv.append(this.selectFulfilment);
 
     const selectDiv = document.createElement("div");
     selectDiv.id = "emmext-selectdiv";
-    selectDiv.append(selectFulfilment);
-    selectDiv.append(inputShipping);
+
+    selectDiv.append(fulfilmentDiv);
+    selectDiv.append(shippingDiv);
 
     const registerBtn = document.createElement("button");
-    registerBtn.id = "emmext-registerbtn";
-    registerBtn.textContent = "登録";
-    registerBtn.onclick = async () =>
-      await handleClickRegister(
-        Number(inputShipping.value),
-        selectFulfilment.value
-      );
+    registerBtn.className = "emmext-registerbtn";
+    registerBtn.onclick = () => {
+      registerBtn.disabled = true;
+      registerBtn.classList.add("emz-onclic");
+      handleClickRegister(
+        Number(this.inputShipping.value),
+        this.selectFulfilment.value
+      )
+        .then(() => {
+          registerBtn.classList.remove("emz-onclic");
+          registerBtn.classList.add("emz-validate");
+        })
+        .catch((e) => {
+          console.error(e);
+          alert("登録に失敗しました");
+        })
+        .finally(() => {
+          setTimeout(() => {
+            registerBtn.disabled = false;
+            registerBtn.classList.remove("emz-onclic");
+            registerBtn.classList.remove("emz-validate");
+          }, 1200);
+        });
+    };
+    // await handleClickRegister(
+    //   Number(this.inputShipping.value),
+    //   this.selectFulfilment.value
+    // );
 
     this.outerDiv = document.createElement("div");
     this.outerDiv.id = "emmext-outerdiv";
 
-    this.outerDiv.append(registerBtn);
-    this.outerDiv.append(selectDiv);
     this.outerDiv.append(this.img);
     this.outerDiv.append(this.titleDiv);
-
-    chrome.storage.local.get(["stock"]).then((data) => {
-      if (!data.stock) return;
-      this.setTitle(data.stock.core.title);
-      this.setImg(data.stock.core.imageUrls[0]);
-    });
-  }
-  attach() {
-    const headerNode = document.querySelector("div.header");
-    if (headerNode && !headerNode.contains(this.outerDiv)) {
-      headerNode.prepend(this.outerDiv);
-    }
+    this.outerDiv.append(selectDiv);
+    this.outerDiv.append(registerBtn);
   }
   setTitle(title: string) {
     this.titleDiv.textContent = title;
@@ -299,47 +342,51 @@ const extElem = new (class {
   setImg(src: string) {
     this.img.src = src;
   }
-})();
-
-chrome.storage.onChanged.addListener((changes) => {
-  console.log("storage changed", changes);
-  if (!changes.stock) return;
-  extElem.setTitle(changes.stock.newValue.core.title);
-  extElem.setImg(changes.stock.newValue.core.imageUrls[0]);
-});
-
-const observer = (() => {
-  let randNum = 0;
-  return new MutationObserver(() => {
-    const tmp = Math.random();
-    randNum = tmp;
-    setTimeout(() => {
-      if (randNum !== tmp) return;
-      console.log("mutation observed");
-      document
-        .querySelector<HTMLDivElement>("div.summary__photos")
-        ?.style.setProperty("display", "none");
-      [
-        ...document.querySelectorAll<HTMLDivElement>(
-          "div.summary__title div.smry--section"
-        ),
-      ]
-        .slice(1)
-        .forEach((node) => {
-          node.style.setProperty("display", "none");
-        });
-    }, 500);
-  });
-})();
-
-chrome.storage.local.get(["isGptEnabled"]).then((data) => {
-  if (!data.isGptEnabled) {
-    setTimeout(() => {
-      extElem.attach();
-    }, 500);
-    observer.observe(document, {
-      childList: true,
-      subtree: true,
-    });
+  setShippingOptions(shippingFees: UserInfo["shippingFees"]) {
+    this.inputShipping.innerHTML = shippingFees
+      .map(
+        (fee) =>
+          `<option value="${fee.value}">${fee.value}円 ${fee.desc}</option>`
+      )
+      .join("");
   }
+  setFulfilmentOptions(fulfillmentPolicies: UserInfo["fulfillmentPolicies"]) {
+    this.selectFulfilment.innerHTML = fulfillmentPolicies
+      .map(
+        (policy) =>
+          `<option value="${policy.policyId}">${policy.policyId} ${policy.desc}</option>`
+      )
+      .join("");
+  }
+};
+
+const main = async () => {
+  const storage = await chrome.storage.local.get(["isGptEnabled", "stock"]);
+  if (storage.isGptEnabled) return;
+  const extElems = new ExtensionElements();
+  if (storage.stock) {
+    extElems.setTitle(storage.stock.core.title);
+    extElems.setImg(storage.stock.core.imageUrls[0]);
+  }
+  const userInfo = await getUserInfo();
+  extElems.setShippingOptions(userInfo.shippingFees);
+  extElems.setFulfilmentOptions(userInfo.fulfillmentPolicies);
+
+  setTimeout(() => {
+    const headerNode = document.querySelector("div.header");
+    if (headerNode && !headerNode.contains(extElems.outerDiv)) {
+      headerNode.prepend(extElems.outerDiv);
+    }
+  }, 500);
+
+  chrome.storage.onChanged.addListener((changes) => {
+    console.log("storage changed", changes);
+    if (!changes.stock) return;
+    extElems.setTitle(changes.stock.newValue.core.title);
+    extElems.setImg(changes.stock.newValue.core.imageUrls[0]);
+  });
+};
+
+main().catch((err) => {
+  console.error(err);
 });

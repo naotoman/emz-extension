@@ -1,8 +1,10 @@
 #emmext-outerdiv {
+  background-color: #ffffff;
   display: flex;
   position: absolute;
   left: 0;
   height: 60px;
+  width: 100%;
   z-index: 1000000;
   margin-top: -16px;
   margin-bottom: -18px;
@@ -16,23 +18,12 @@
 }
 
 #emmext-titlediv {
-  width: 160px;
+  margin-right: 4px;
+  width: 140px;
   font-size: 0.75rem;
   font-weight: bold;
   color: #333333;
   line-height: 1.5;
-}
-
-#emmext-registerbtn {
-  margin-right: 2px;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  height: 90%;
-  width: 60px;
-  cursor: pointer;
-  font-weight: bold;
 }
 
 #emmext-selectdiv {
@@ -44,9 +35,88 @@
 }
 
 .emmext-select {
-  width: 90px;
+  width: 180px;
   padding: 3px;
   border: 1px solid #cccccc;
   border-radius: 4px;
   font-size: 0.8rem;
+}
+
+.emmext-label {
+  margin-right: 4px;
+  width: 90px;
+  display: inline-block;
+  text-align: end;
+}
+
+.emmext-registerbtn {
+  outline: none;
+  height: 50px;
+  width: 120px;
+  text-align: center;
+  background: #fff;
+  color: #1ecd97;
+  border: 3px solid #1ecd97;
+  border-radius: 40px;
+  letter-spacing: 2px;
+  text-shadow: 0;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.emmext-registerbtn:hover {
+  color: white;
+  background: #1ecd97;
+}
+.emmext-registerbtn:active {
+  letter-spacing: 4px;
+}
+.emmext-registerbtn:after {
+  content: "登録";
+}
+.emz-onclic {
+  width: 50px;
+  border-color: #bbbbbb;
+  border-width: 3px;
+  font-size: 0;
+  border-left-color: #1ecd97;
+  -webkit-animation: emzrotating 2s 0.25s linear infinite;
+  animation: emzrotating 2s 0.25s linear infinite;
+}
+.emz-onclic:after {
+  content: "";
+}
+.emz-onclic:hover {
+  color: #1ecd97;
+  background: white;
+}
+.emz-validate {
+  font-size: 20px;
+  color: white;
+  background: #1ecd97;
+}
+.emz-validate:after {
+  content: "✔";
+}
+@-webkit-keyframes emzrotating {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes emzrotating {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.emmext-registerbtn:disabled {
+  cursor: default;
 }
