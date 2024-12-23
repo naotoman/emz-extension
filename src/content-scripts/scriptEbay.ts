@@ -262,8 +262,11 @@ const ExtensionElements = class {
   img: HTMLImageElement;
   titleDiv: HTMLDivElement;
   outerDiv: HTMLDivElement;
-  inputShipping: HTMLSelectElement;
+  selectShipping: HTMLSelectElement;
+  inputShipping: HTMLInputElement;
   selectFulfilment: HTMLSelectElement;
+  inputFulfilment: HTMLInputElement;
+
   constructor() {
     this.img = document.createElement("img");
     this.img.src = "";
@@ -275,22 +278,96 @@ const ExtensionElements = class {
     const shippingLabel = document.createElement("label");
     shippingLabel.textContent = "送料:";
     shippingLabel.className = "emmext-label";
-    this.inputShipping = document.createElement("select");
-    this.inputShipping.className = "emmext-select";
+
+    // Create select for shipping
+    this.selectShipping = document.createElement("select");
+    this.selectShipping.className = "emmext-select";
+
+    // Create input for shipping
+    this.inputShipping = document.createElement("input");
+    this.inputShipping.type = "number";
+    this.inputShipping.className = "emmext-freetext";
+    this.inputShipping.style.display = "none";
 
     const shippingDiv = document.createElement("div");
     shippingDiv.append(shippingLabel);
+    shippingDiv.append(this.selectShipping);
     shippingDiv.append(this.inputShipping);
+
+    // Create toggle for shipping
+    const shippingToggle = document.createElement("input");
+    shippingToggle.type = "checkbox";
+    shippingToggle.id = "emmext-shipping-toggle";
+    shippingToggle.className = "emmext-toggleCheckbox";
+
+    // Add event listener for shipping toggle
+    shippingToggle.addEventListener("change", (e) => {
+      const isChecked = (e.target as HTMLInputElement).checked;
+      this.selectShipping.style.display = isChecked ? "none" : "inline-block";
+      this.inputShipping.style.display = isChecked ? "inline-block" : "none";
+    });
+
+    const shippingToggleLabel = document.createElement("label");
+    shippingToggleLabel.setAttribute("for", "emmext-shipping-toggle");
+    shippingToggleLabel.className = "emmext-toggleContainer";
+
+    const shippingToggleDiv1 = document.createElement("div");
+    shippingToggleDiv1.textContent = "選択";
+    const shippingToggleDiv2 = document.createElement("div");
+    shippingToggleDiv2.textContent = "入力";
+
+    shippingToggleLabel.append(shippingToggleDiv1);
+    shippingToggleLabel.append(shippingToggleDiv2);
+
+    shippingDiv.append(shippingToggle);
+    shippingDiv.append(shippingToggleLabel);
 
     const fulfilmentLabel = document.createElement("label");
     fulfilmentLabel.textContent = "配送ポリシー:";
     fulfilmentLabel.className = "emmext-label";
+
+    // Create select for fulfillment
     this.selectFulfilment = document.createElement("select");
     this.selectFulfilment.className = "emmext-select";
+
+    // Create input for fulfillment
+    this.inputFulfilment = document.createElement("input");
+    this.inputFulfilment.type = "text";
+    this.inputFulfilment.className = "emmext-freetext";
+    this.inputFulfilment.style.display = "none";
 
     const fulfilmentDiv = document.createElement("div");
     fulfilmentDiv.append(fulfilmentLabel);
     fulfilmentDiv.append(this.selectFulfilment);
+    fulfilmentDiv.append(this.inputFulfilment);
+
+    // Create toggle for fulfillment
+    const fulfillmentToggle = document.createElement("input");
+    fulfillmentToggle.type = "checkbox";
+    fulfillmentToggle.id = "emmext-fulfillment-toggle";
+    fulfillmentToggle.className = "emmext-toggleCheckbox";
+
+    // Add event listener for fulfillment toggle
+    fulfillmentToggle.addEventListener("change", (e) => {
+      const isChecked = (e.target as HTMLInputElement).checked;
+      this.selectFulfilment.style.display = isChecked ? "none" : "inline-block";
+      this.inputFulfilment.style.display = isChecked ? "inline-block" : "none";
+    });
+
+    const fulfillmentToggleLabel = document.createElement("label");
+    fulfillmentToggleLabel.setAttribute("for", "emmext-fulfillment-toggle");
+    fulfillmentToggleLabel.className = "emmext-toggleContainer";
+
+    const fulfillmentToggleDiv1 = document.createElement("div");
+    fulfillmentToggleDiv1.textContent = "選択";
+    const fulfillmentToggleDiv2 = document.createElement("div");
+    fulfillmentToggleDiv2.textContent = "入力";
+
+    fulfillmentToggleLabel.append(fulfillmentToggleDiv1);
+    fulfillmentToggleLabel.append(fulfillmentToggleDiv2);
+
+    fulfilmentDiv.append(fulfillmentToggle);
+    fulfilmentDiv.append(fulfillmentToggleLabel);
 
     const selectDiv = document.createElement("div");
     selectDiv.id = "emmext-selectdiv";
@@ -303,10 +380,7 @@ const ExtensionElements = class {
     registerBtn.onclick = () => {
       registerBtn.disabled = true;
       registerBtn.classList.add("emz-onclic");
-      handleClickRegister(
-        Number(this.inputShipping.value),
-        this.selectFulfilment.value
-      )
+      this.handleClickRegister()
         .then(() => {
           registerBtn.classList.remove("emz-onclic");
           registerBtn.classList.add("emz-validate");
@@ -323,10 +397,6 @@ const ExtensionElements = class {
           }, 1200);
         });
     };
-    // await handleClickRegister(
-    //   Number(this.inputShipping.value),
-    //   this.selectFulfilment.value
-    // );
 
     this.outerDiv = document.createElement("div");
     this.outerDiv.id = "emmext-outerdiv";
@@ -343,7 +413,7 @@ const ExtensionElements = class {
     this.img.src = src;
   }
   setShippingOptions(shippingFees: UserInfo["shippingFees"]) {
-    this.inputShipping.innerHTML = shippingFees
+    this.selectShipping.innerHTML = shippingFees
       .map(
         (fee) =>
           `<option value="${fee.value}">${fee.value}円 ${fee.desc}</option>`
@@ -357,6 +427,19 @@ const ExtensionElements = class {
           `<option value="${policy.policyId}">${policy.policyId} ${policy.desc}</option>`
       )
       .join("");
+  }
+  handleClickRegister() {
+    const shippingValue =
+      this.inputShipping.style.display === "none"
+        ? this.selectShipping.value
+        : this.inputShipping.value;
+
+    const fulfillmentValue =
+      this.inputFulfilment.style.display === "none"
+        ? this.selectFulfilment.value
+        : this.inputFulfilment.value;
+
+    return handleClickRegister(Number(shippingValue), fulfillmentValue);
   }
 };
 

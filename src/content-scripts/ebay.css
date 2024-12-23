@@ -34,16 +34,19 @@
   gap: 6px;
 }
 
-.emmext-select {
+.emmext-select,
+.emmext-freetext {
   width: 180px;
   padding: 3px;
   border: 1px solid #cccccc;
   border-radius: 4px;
   font-size: 0.8rem;
+  margin-right: 8px;
+  box-sizing: border-box;
 }
 
 .emmext-label {
-  margin-right: 4px;
+  margin-right: 8px;
   width: 90px;
   display: inline-block;
   text-align: end;
@@ -119,4 +122,93 @@
 }
 .emmext-registerbtn:disabled {
   cursor: default;
+}
+
+/* Toggle button styles */
+.emmext-toggleCheckbox {
+  display: none;
+}
+
+.emmext-toggleContainer {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: repeat(2, 1fr);
+  width: fit-content;
+  border: 2px solid grey;
+  border-radius: 20px;
+  background: grey;
+  font-weight: bold;
+  color: grey;
+  cursor: pointer;
+  margin-right: 10px;
+  vertical-align: middle;
+  /* min-width: 80px; */
+}
+
+.emmext-toggleContainer::before {
+  content: "";
+  position: absolute;
+  width: 50%;
+  height: 100%;
+  left: 0%;
+  border-radius: 20px;
+  background: white;
+  transition: all 0.3s;
+}
+
+.emmext-toggleContainer div {
+  padding: 4px 4px;
+  text-align: center;
+  z-index: 1;
+  font-size: 10px;
+}
+
+.emmext-toggleCheckbox:checked + .emmext-toggleContainer::before {
+  left: 50%;
+}
+
+.emmext-toggleCheckbox:checked + .emmext-toggleContainer div:first-child {
+  color: white;
+  transition: color 0.3s;
+}
+
+.emmext-toggleCheckbox:checked + .emmext-toggleContainer div:last-child {
+  color: #333333;
+  transition: color 0.3s;
+}
+
+.emmext-toggleCheckbox + .emmext-toggleContainer div:first-child {
+  color: #333333;
+  transition: color 0.3s;
+}
+
+.emmext-toggleCheckbox + .emmext-toggleContainer div:last-child {
+  color: white;
+  transition: color 0.3s;
+}
+
+.emmext-freetext {
+  width: 180px;
+  padding: 3px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin-right: 8px;
+}
+
+/* number type inputの矢印ボタンを非表示 */
+.emmext-freetext[type="number"]::-webkit-outer-spin-button,
+.emmext-freetext[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.emmext-freetext[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* フォーカス時のスタイル */
+.emmext-freetext:focus {
+  outline: none;
+  border-color: #666666;
 }
