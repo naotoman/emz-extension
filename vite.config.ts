@@ -28,11 +28,6 @@ export default defineConfig(({ mode }) => {
         js: ["src/content-scripts/scriptMerc.ts"],
       },
       {
-        matches: ["https://www.ebay.com/lstng*"],
-        run_at: "document_idle",
-        js: ["src/content-scripts/scriptEbay.ts"],
-      },
-      {
         matches: [config.siteUrl + "/*"],
         run_at: "document_idle",
         js: ["src/content-scripts/scriptSystem.ts"],
