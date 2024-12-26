@@ -4,6 +4,14 @@ interface ItemState {
   isListed: boolean;
 }
 
+function stringToRandomBoolean(str: string) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) % 1000;
+  }
+  return hash % 2 === 0;
+}
+
 const batchGetItems = (() => {
   let itemCache: {
     searchUrls: Set<string>;
@@ -70,7 +78,11 @@ const renderItemThumbnails = async () => {
       e.preventDefault();
       const query = `
         mutation MyMutation {
-          pushItemToSqs(input: {orgUrl: ${JSON.stringify(node.href)}})
+          ${
+            stringToRandomBoolean(node.href)
+              ? "pushItemToSqs1"
+              : "pushItemToSqs2"
+          }(input: {orgUrl: ${JSON.stringify(node.href)}})
         }`;
       console.log(query);
       const responseData = await queryAndUpdateToken(query);
