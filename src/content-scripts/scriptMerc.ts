@@ -1,11 +1,4 @@
 import { queryAndUpdateToken } from "./aws";
-import {
-  createItemSubmitButton,
-  createItemSubmitButtonCssNode,
-} from "./ItemSubmitButton";
-
-let itemSubmitButton = createItemSubmitButton();
-const itemSubmitButtonCssNode = createItemSubmitButtonCssNode();
 
 interface ItemState {
   isListed: boolean;
@@ -106,25 +99,6 @@ const renderItemThumbnails = async () => {
   });
 };
 
-const renderWholeExtension = async () => {
-  if (
-    location.pathname.startsWith("/shops/product/") ||
-    location.pathname.startsWith("/item/")
-  ) {
-    const picNode = document.querySelector('div[data-testid="carousel"]');
-    const baseDiv = picNode?.parentNode;
-    if (baseDiv && !baseDiv.contains(itemSubmitButton)) {
-      itemSubmitButton = createItemSubmitButton();
-      baseDiv.append(itemSubmitButton);
-    }
-  }
-  const headerNode = document.querySelector("header");
-  if (headerNode && !headerNode.contains(itemSubmitButtonCssNode)) {
-    headerNode.append(itemSubmitButtonCssNode);
-  }
-  await renderItemThumbnails();
-};
-
 const observer = (() => {
   let randNum = 0;
   return new MutationObserver(() => {
@@ -133,7 +107,7 @@ const observer = (() => {
     setTimeout(async () => {
       if (randNum !== tmp) return;
       console.log("mutation observer triggered");
-      await renderWholeExtension();
+      await renderItemThumbnails();
     }, 500);
   });
 })();

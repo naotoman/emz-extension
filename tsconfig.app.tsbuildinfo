@@ -1,1 +1,1 @@
-{"root":["./src/vite-env.d.ts","./src/content-scripts/ItemSubmitButton.ts","./src/content-scripts/aws.ts","./src/content-scripts/scraper.ts","./src/content-scripts/scriptMerc.ts","./src/content-scripts/scriptSystem.ts","./src/popup/App.tsx","./src/popup/main.tsx"],"version":"5.7.2"}
+{"root":["./src/vite-env.d.ts","./src/content-scripts/aws.ts","./src/content-scripts/scraper.ts","./src/content-scripts/scriptMerc.ts","./src/content-scripts/scriptSystem.ts","./src/popup/App.tsx","./src/popup/main.tsx"],"version":"5.7.2"}
