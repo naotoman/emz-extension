@@ -1,7 +1,9 @@
 import { queryAndUpdateToken } from "./aws";
 
 interface ItemState {
-  isListed: boolean;
+  isListed?: boolean;
+  isDraft?: boolean;
+  isImageChanged?: boolean;
 }
 
 function stringToRandomBoolean(str: string) {
@@ -45,6 +47,8 @@ const batchGetItems = (() => {
                   itemUrlsArray.slice(i, i + 100)
                 )}}) {
                   isListed
+                  isDraft
+                  isImageChanged
                 }
               }
             `;
@@ -104,7 +108,8 @@ const renderItemThumbnails = async () => {
     const picNode = node.querySelector("picture");
     const overlayDiv =
       picNode?.querySelector<HTMLDivElement>("div.emz-thumbnail");
-    if (searchedItems.get(node.href) && overlayDiv) {
+    const itemState = searchedItems.get(node.href);
+    if (itemState && !itemState.isImageChanged && overlayDiv) {
       overlayDiv.style.cssText =
         "content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); z-index: 998;";
     }
