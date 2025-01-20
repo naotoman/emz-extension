@@ -84,11 +84,9 @@ const renderItemThumbnails = async () => {
       e.preventDefault();
       const query = `
         mutation MyMutation {
-          ${
-            stringToRandomBoolean(node.href)
-              ? "pushItemToSqs1"
-              : "pushItemToSqs2"
-          }(input: {orgUrl: ${JSON.stringify(node.href)}})
+          pushItemToSqs(input: {orgUrl: "${
+            node.href
+          }", MessageGroupId: "${stringToRandomBoolean(node.href)}"})
         }`;
       console.log(query);
       const responseData = await queryAndUpdateToken(query);
